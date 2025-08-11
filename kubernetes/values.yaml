@@ -1,0 +1,15 @@
+# Default values for our microservice-app chart.
+
+replicaCount: 2
+
+backend:
+  image:
+    repository: your-docker-id/microservice-backend
+    tag: latest
+  port: 5000
+
+frontend:
+  image:
+    repository: your-docker-id/microservice-frontend
+    tag: latest
+  port: 80

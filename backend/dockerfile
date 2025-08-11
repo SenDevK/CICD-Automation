@@ -1,0 +1,19 @@
+# Start from a slim Python base image
+FROM python:3.9-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Install Gunicorn, a production-ready WSGI server, along with Flask.
+RUN pip install Flask Flask-CORS gunicorn
+
+# Copy the application code into the container
+COPY app.py .
+
+# Expose the port the app runs on
+EXPOSE 5000
+
+# Use Gunicorn to run the application. This is more stable for containers.
+# It starts 4 worker processes and binds to all network interfaces on port 5000.
+# The 'app:app' tells Gunicorn to look for an object named 'app' inside the 'app.py' file.
+CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5000", "app:app"]

@@ -1,0 +1,35 @@
+# templates/frontend-manifest.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: frontend-app
+  template:
+    metadata:
+      labels:
+        app: frontend-app
+    spec:
+      containers:
+      - name: frontend-container
+        image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.frontend.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-app-service
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend-app
+  ports:
+  - protocol: TCP
+    port: {{ .Values.frontend.port }}
+    targetPort: {{ .Values.frontend.port }}
+```yaml
