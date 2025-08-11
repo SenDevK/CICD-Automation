@@ -1,4 +1,4 @@
-#templates/backend-manifest.yml
+# templates/backend-manifest.yml
 
 apiVersion: apps/v1
 kind: Deployment
@@ -32,4 +32,3 @@ spec:
   - protocol: TCP
     port: {{ .Values.backend.port }}
     targetPort: {{ .Values.backend.port }}
-```yaml
