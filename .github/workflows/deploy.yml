@@ -1,0 +1,65 @@
+name: Build and Deploy to k3d
+
+# This workflow runs on every push to the 'main' branch
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # --- Job 1: Build and Push Docker Images ---
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.image_tag.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Generate unique image tag
+        id: image_tag
+        run: echo "tag=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/microservice-backend:${{ steps.image_tag.outputs.tag }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/microservice-frontend:${{ steps.image_tag.outputs.tag }}
+
+  # --- Job 2: Deploy to Kubernetes using Helm ---
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install k3d
+        run: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+
+      - name: Create k3d cluster
+        run: k3d cluster create my-app-cluster --port "8081:80@loadbalancer"
+
+      - name: Install Helm
+        run: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install my-app ./kubernetes \
+            --set backend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/microservice-backend \
+            --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/microservice-frontend \
+            --set backend.image.tag=${{ needs.build-and-push.outputs.image_tag }} \
+            --set frontend.image.tag=${{ needs.build-and-push.outputs.image_tag }}
