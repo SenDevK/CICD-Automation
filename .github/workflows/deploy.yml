@@ -1,12 +1,12 @@
-name: Build and Deploy to k3d
+# .github/workflows/deploy.yml
 
-# This workflow runs on every push to the 'main' branch
+name: Build, Deploy, and Monitor
+
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  # --- Job 1: Build and Push Docker Images ---
   build-and-push:
     runs-on: ubuntu-latest
     outputs:
@@ -39,7 +39,6 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/microservice-frontend:${{ steps.image_tag.outputs.tag }}
 
-  # --- Job 2: Deploy to Kubernetes using Helm ---
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
@@ -56,10 +55,24 @@ jobs:
       - name: Install Helm
         run: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-      - name: Deploy with Helm
+      - name: Deploy Application with Helm
         run: |
           helm upgrade --install my-app ./kubernetes \
             --set backend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/microservice-backend \
             --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/microservice-frontend \
             --set backend.image.tag=${{ needs.build-and-push.outputs.image_tag }} \
             --set frontend.image.tag=${{ needs.build-and-push.outputs.image_tag }}
+
+      # --- NEW MONITORING STEPS ---
+      - name: Add Prometheus Helm Repository
+        run: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+      - name: Update Helm Repositories
+        run: helm repo update
+
+      - name: Install Prometheus and Grafana
+        # This installs the 'kube-prometheus-stack' chart into a new 'monitoring' namespace.
+        # The '--wait' flag makes the job wait until the deployment is complete.
+        run: |
+          helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace --wait

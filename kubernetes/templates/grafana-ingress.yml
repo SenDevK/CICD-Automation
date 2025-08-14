@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+spec:
+  rules:
+  - http:
+      paths:
+      # This rule says that any traffic coming to our load balancer
+      # with a path starting in /grafana will be routed to the Grafana service.
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            # This is the default name of the Grafana service created by the prometheus chart.
+            name: prometheus-grafana
+            port:
+              number: 80

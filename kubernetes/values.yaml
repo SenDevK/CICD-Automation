@@ -4,12 +4,12 @@ replicaCount: 2
 
 backend:
   image:
-    repository: your-docker-id/microservice-backend
+    repository: sendevk003/microservice-backend
     tag: latest
   port: 5000
 
 frontend:
   image:
-    repository: your-docker-id/microservice-frontend
+    repository: sendevk003/microservice-frontend
     tag: latest
   port: 80
