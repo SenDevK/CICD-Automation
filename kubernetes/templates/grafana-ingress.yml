@@ -15,4 +15,7 @@ spec:
             # This is the default name of the Grafana service created by the prometheus chart.
             name: prometheus-grafana
             port:
+              # This is the new, required part. We must specify the namespace
+              # where the 'prometheus-grafana' service lives.
+              namespace: monitoring
               number: 80
